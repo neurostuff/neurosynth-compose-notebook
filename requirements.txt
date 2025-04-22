@@ -1,1 +1,1 @@
-git+https://github.com/neurostuff/nsc-runner.git#egg=compose-runner
+compose-runner>=0.4.6
