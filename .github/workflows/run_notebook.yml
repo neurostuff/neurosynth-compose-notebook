@@ -77,7 +77,7 @@ jobs:
           jupyter nbconvert --to notebook --execute run_and_explore.ipynb --output executed_notebook.ipynb
           
       - name: Upload notebook
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: executed-notebook
           path: executed_notebook.ipynb
