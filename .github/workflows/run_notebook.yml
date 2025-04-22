@@ -2,6 +2,9 @@ name: Run Notebook
 
 on:
   workflow_dispatch:
+  schedule:
+    # Runs at 9:00 AM Central (14:00 UTC)
+    - cron: '0 14 * * *'
   push:
     branches: [ main ]
   pull_request:
