@@ -1,0 +1,82 @@
+name: Run Notebook
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs at 9:00 AM Central (14:00 UTC)
+    - cron: '0 14 * * *'
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-notebook:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Extract dependencies from colabtools
+        run: |
+          # Download setup.py
+          curl -s https://raw.githubusercontent.com/googlecolab/colabtools/refs/heads/main/setup.py > setup.py
+          # Extract DEPENDENCIES using Python
+          python3 - <<EOF
+          with open('setup.py', 'r') as f:
+              content = f.read()
+          
+          # Find DEPENDENCIES tuple
+          start = content.find('DEPENDENCIES = (')
+          end = content.find(')', start)
+          deps = content[start:end+1]
+          
+          # Execute the tuple to get the values
+          exec(deps)
+          
+          # Write dependencies to requirements file
+          with open('colab_requirements.txt', 'w') as f:
+              for dep in DEPENDENCIES:
+                  f.write(f"{dep}\n")
+          EOF
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install colabtools dependencies
+          pip install -r colab_requirements.txt
+          # Install additional required packages
+          pip install -r requirements.txt
+
+      - name: Modify notebook
+        run: |
+          # Convert notebook to Python script for easier text processing
+          jupyter nbconvert --to script run_and_explore.ipynb
+          
+          # Remove Setup environment section
+          sed -i '/#@title Setup environment/,/# In\[ \]:/d' run_and_explore.py
+          
+          # Replace META_ID
+          sed -i 's/META_ID = ""/META_ID = "36Dm86NVjoTJ"/' run_and_explore.py
+          
+          # Add no_upload parameter to run function
+          sed -i 's/url, meta_result = run(META_ID)/url, meta_result = run(META_ID, no_upload=True)/' run_and_explore.py
+          
+          # Remove View the Report section (everything after the line containing "# View")
+          sed -i '/^#@title View/,$d' run_and_explore.py
+
+      - name: Execute Python script
+        run: |
+          python run_and_explore.py
+          
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: |
+            results/
+            report/
