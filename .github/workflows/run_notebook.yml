@@ -57,27 +57,26 @@ jobs:
           # Convert notebook to Python script for easier text processing
           jupyter nbconvert --to script run_and_explore.ipynb
           
+          # Remove Setup environment section
+          sed -i '/#@title Setup environment/,/# In\[ \]:/d' run_and_explore.py
+          
           # Replace META_ID
           sed -i 's/META_ID = ""/META_ID = "36Dm86NVjoTJ"/' run_and_explore.py
           
           # Add no_upload parameter to run function
           sed -i 's/url, meta_result = run(META_ID)/url, meta_result = run(META_ID, no_upload=True)/' run_and_explore.py
           
-          # Remove View the Report section (everything after the line containing "## View the Report")
-          sed -i '/^## View the Report/,$d' run_and_explore.py
-          
-          # Convert back to notebook
-          jupyter nbconvert --to notebook run_and_explore.py
-          
-          # Move converted notebook back to original name
-          mv run_and_explore.nbconvert.ipynb run_and_explore.ipynb
-          
-      - name: Execute notebook
+          # Remove View the Report section (everything after the line containing "# View")
+          sed -i '/^#@title View/,$d' run_and_explore.py
+
+      - name: Execute Python script
         run: |
-          jupyter nbconvert --to notebook --execute run_and_explore.ipynb --output executed_notebook.ipynb
+          python run_and_explore.py
           
-      - name: Upload notebook
+      - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: executed-notebook
-          path: executed_notebook.ipynb
+          name: analysis-results
+          path: |
+            results/
+            report/
