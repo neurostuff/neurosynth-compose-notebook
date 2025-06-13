@@ -1,2 +1,2 @@
-compose-runner>=0.4.6
+compose-runner>=0.4.7
 numpy>=2.0
